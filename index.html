@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RupeeTracker - Smart Expense Management</title>
+    
+    <!-- Tailwind CSS from CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- Supabase library -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
+    <!-- Our custom styles -->
+    <link rel="stylesheet" href="css/style.css">
+    
+    <style>
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans min-h-screen text-gray-800">
+
+    <!-- LOGIN PAGE (shown first) -->
+    <div id="auth-page" class="flex items-center justify-center min-h-screen px-4">
+        <div class="bg-white p-8 rounded-xl shadow-md w-full max-w-md border border-gray-100">
+            <h2 class="text-2xl font-bold text-center mb-6 text-emerald-700">RupeeTracker</h2>
+            <p class="text-center text-gray-600 mb-6">Smart Expense Management</p>
+            
+            <form id="auth-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Email</label>
+                    <input type="email" id="auth-email" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-semibold mb-1">Password</label>
+                    <input type="password" id="auth-password" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <button type="submit" id="auth-btn" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 rounded-lg transition">
+                    Login
+                </button>
+            </form>
+            
+            <p class="text-center text-sm mt-4 text-gray-600">
+                Don't have an account? 
+                <button id="auth-switch-btn" class="text-emerald-600 font-bold underline">Register</button>
+            </p>
+        </div>
+    </div>
+
+    <!-- DASHBOARD PAGE (hidden initially, shown after login) -->
+    <div id="app-page" class="hidden">
+        <!-- Navigation Bar -->
+        <nav class="bg-emerald-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
+            <h1 class="text-xl font-bold">₹ RupeeTracker</h1>
+            <div class="space-x-3">
+                <button onclick="showDashboard()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
+                <button onclick="showExpenses()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Expenses</button>
+                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded font-medium">Logout</button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="max-w-6xl mx-auto p-6">
+            
+            <!-- Budget Summary Card -->
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+                <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Total Monthly Budget</p>
+                <h2 id="display-budget" class="text-4xl font-extrabold text-gray-900">₹0.00</h2>
+                <p id="display-spendable" class="text-sm text-gray-600 mt-2">Spendable: ₹0.00 (Savings Goal: ₹0.00)</p>
+                
+                <div class="flex gap-2 mt-4">
+                    <button onclick="openBudgetForm()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-4 py-2 rounded-lg">
+                        ✏️ Setup Budget
+                    </button>
+                    <button onclick="openExpenseForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg">
+                        ➕ Add Expense
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard Section -->
+            <div id="dashboard-section">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                    <!-- Budget Pie Chart -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800">Budget Allocations</h3>
+                        <canvas id="budgetChart"></canvas>
+                    </div>
+                    
+                    <!-- Expense Pie Chart -->
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                        <h3 class="text-lg font-bold mb-4 text-gray-800">Actual Spending</h3>
+                        <canvas id="expenseChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Spending Trend Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800">Spending Trend</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="trendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Expenses Section -->
+            <div id="expenses-section" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+                <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">All Expenses</h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="bg-gray-100 text-gray-700">
+                                <th class="p-3 border-b">Date</th>
+                                <th class="p-3 border-b">Name</th>
+                                <th class="p-3 border-b">Category</th>
+                                <th class="p-3 border-b">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody id="expense-table-body" class="divide-y">
+                            <!-- Expenses will be populated here by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- BUDGET SETUP MODAL (Hidden initially) -->
+    <div id="budget-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4 text-emerald-800">Set Monthly Budget</h3>
+            
+            <form id="budget-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Total Monthly Budget (₹)</label>
+                    <input type="number" id="total-budget" required min="0" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-1">Savings Goal (₹)</label>
+                    <input type="number" id="savings-goal" min="0" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <p class="text-xs text-gray-500 mt-1">Leave blank or 0 if no savings goal</p>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-2">Select Categories & Allocations</label>
+                    <div id="category-checkboxes" class="space-y-2 max-h-60 overflow-y-auto p-2 border bg-gray-50 rounded-lg">
+                        <!-- Categories will be generated here by JavaScript -->
+                    </div>
+                </div>
+                
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                    <button type="button" onclick="closeBudgetModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">Save Budget</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- EXPENSE FORM MODAL (Hidden initially) -->
+    <div id="expense-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 class="text-xl font-bold mb-4 text-emerald-800">Add New Expense</h3>
+            
+            <form id="expense-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-bold mb-1">Expense Name</label>
+                    <input type="text" id="expense-name" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-1">Category</label>
+                    <select id="expense-category" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <!-- Options will be populated by JavaScript -->
+                    </select>
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-1">Amount (₹)</label>
+                    <input type="number" id="expense-amount" required min="0.01" step="0.01" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-1">Date</label>
+                    <input type="date" id="expense-date" required class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-bold mb-1">Description (Optional)</label>
+                    <textarea id="expense-desc" rows="2" class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500"></textarea>
+                </div>
+                
+                <div class="flex justify-end space-x-2 pt-2 border-t">
+                    <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">Add Expense</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- LOAD ALL JAVASCRIPT FILES -->
+    <!-- Order matters! app.js must load first (initializes Supabase) -->
+    <script src="js/app.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/budget.js"></script>
+    <script src="js/expenses.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/ml-predictions.js"></script>
+
+</body>
+</html>
