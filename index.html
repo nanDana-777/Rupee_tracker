@@ -58,7 +58,7 @@
         <nav class="bg-emerald-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
             <h1 class="text-xl font-bold">₹ RupeeTracker</h1>
             <div class="space-x-3">
-                <button onclick="showDashboard()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
+                <button onclick="showDashboardSection()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
                 <button onclick="showExpenses()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Expenses</button>
                 <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded font-medium">Logout</button>
             </div>
@@ -85,6 +85,15 @@
 
             <!-- Dashboard Section -->
             <div id="dashboard-section">
+                <!-- Smart Spending Pace (rule-based heuristic, not real ML) -->
+                <div id="smart-pace-card" class="hidden bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+                    <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Smart Spending Pace</p>
+                    <h3 id="safe-daily-amount" class="text-3xl font-extrabold text-gray-900 mt-1">₹0.00 / day</h3>
+                    <p id="smart-pace-detail" class="text-sm text-gray-600 mt-1"></p>
+                    <p id="smart-pace-message" class="text-sm font-medium mt-1"></p>
+                    <p class="text-xs text-gray-400 mt-2">A simple rule-based estimate (remaining budget ÷ days left) — not AI/ML.</p>
+                </div>
+
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <!-- Budget Pie Chart -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
@@ -119,6 +128,7 @@
                                 <th class="p-3 border-b">Name</th>
                                 <th class="p-3 border-b">Category</th>
                                 <th class="p-3 border-b">Amount</th>
+                                <th class="p-3 border-b text-right">Actions</th>
                             </tr>
                         </thead>
                         <tbody id="expense-table-body" class="divide-y">
