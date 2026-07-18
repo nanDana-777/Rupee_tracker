@@ -24,15 +24,27 @@ const CATEGORIES = [
     "Other Expenses"
 ];
 
-// Wait for Supabase library to load
-setTimeout(function() {
-    if (window.supabase) {
+// Wait for the Supabase library (loaded via CDN <script> tag) to become
+// available on window, then initialize. We POLL for this instead of using
+// a fixed delay — a fixed delay is a race condition: on a slow connection
+// the CDN script can take longer than the delay, and on a fast one (or
+// with browser autofill submitting instantly) the user can act before the
+// delay even elapses. Polling waits exactly as long as needed either way.
+function waitForSupabaseLibrary(attemptsLeft) {
+    if (window.supabase && typeof window.supabase.createClient === 'function') {
         console.log("✅ Supabase library loaded successfully");
         initializeApp();
-    } else {
-        console.error("❌ Supabase library failed to load");
+        return;
     }
-}, 500);
+    if (attemptsLeft <= 0) {
+        console.error("❌ Supabase library failed to load");
+        return;
+    }
+    setTimeout(function () {
+        waitForSupabaseLibrary(attemptsLeft - 1);
+    }, 100);
+}
+waitForSupabaseLibrary(50); // retries every 100ms for up to ~5 seconds
 
 // Initialize Supabase
 //
@@ -59,6 +71,12 @@ function initializeApp() {
         // can call `supabase.from(...)` / `supabase.auth...` directly.
         window.supabase = supabase;
         console.log("✅ Exported supabase client to window.supabase");
+
+        // Let other scripts know the client is genuinely ready, instead of
+        // making them guess with their own timeout (that's what caused the
+        // "Supabase client not ready yet" error on fast/autofilled logins).
+        window.supabaseReady = true;
+        document.dispatchEvent(new Event('supabase-ready'));
 
         // Setup auth listener
         setupAuthListener();
