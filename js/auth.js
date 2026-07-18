@@ -1,152 +1,130 @@
 // ============================================
-// RupeeTracker - Authentication Module
+// RupeeTracker - Auth Module
 // ============================================
 
 let isLoginMode = true;
 
-// Wait for Supabase and form elements to be ready
-setTimeout(function() {
-    setupAuthHandlers();
-}, 1000);
+// Wait a moment then setup
+setTimeout(setupAuth, 1500);
 
-function setupAuthHandlers() {
-    const authForm = document.getElementById('auth-form');
-    const authEmail = document.getElementById('auth-email');
-    const authPassword = document.getElementById('auth-password');
-    const authBtn = document.getElementById('auth-btn');
-    const authSwitchBtn = document.getElementById('auth-switch-btn');
+function setupAuth() {
+    console.log("🔐 Setting up auth handlers");
+    
+    const form = document.getElementById('auth-form');
+    const email = document.getElementById('auth-email');
+    const password = document.getElementById('auth-password');
+    const btn = document.getElementById('auth-btn');
+    const switchBtn = document.getElementById('auth-switch-btn');
 
-    if (!authForm) {
-        console.error("❌ Auth form not found in DOM");
+    if (!form) {
+        console.error("❌ Form not found");
         return;
     }
 
-    console.log("✅ Auth form found, setting up handlers");
-
-    // ============================================
-    // FORM SUBMISSION
-    // ============================================
-    
-    authForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
+    // Form submission
+    form.addEventListener('submit', async (e) => {
+        e.preventDefault();
         
-        console.log("🔐 Form submitted, isLoginMode:", isLoginMode);
+        const emailVal = email.value.trim();
+        const passVal = password.value;
 
-        const email = authEmail.value.trim();
-        const password = authPassword.value;
-
-        if (!email || !password) {
-            alert("Please enter email and password");
+        if (!emailVal || !passVal) {
+            alert("Enter email and password");
             return;
         }
 
-        if (password.length < 6) {
-            alert("Password must be at least 6 characters");
+        if (passVal.length < 6) {
+            alert("Password must be 6+ characters");
             return;
         }
 
-        authBtn.disabled = true;
-        authBtn.textContent = isLoginMode ? "Logging in..." : "Creating account...";
+        btn.disabled = true;
+        btn.textContent = isLoginMode ? "Logging in..." : "Registering...";
 
         try {
-            if (!window.supabase) {
-                throw new Error("Supabase not initialized");
+            // Get Supabase from window
+            const supabaseLib = window.supabase;
+            
+            if (!supabaseLib) {
+                throw new Error("Supabase library not loaded");
             }
+
+            // Get the createClient function
+            const { createClient } = supabaseLib;
+            
+            if (!createClient) {
+                throw new Error("createClient not found");
+            }
+
+            // Create client
+            const url = process.env.VITE_SUPABASE_URL;
+            const key = process.env.VITE_SUPABASE_ANON_KEY;
+
+            if (!url || !key) {
+                throw new Error("Missing Supabase credentials");
+            }
+
+            const client = createClient(url, key);
 
             if (isLoginMode) {
-                console.log("🔑 Attempting login with:", email);
-                const { data, error } = await window.supabase.auth.signInWithPassword({
-                    email: email,
-                    password: password
+                console.log("🔑 Logging in...");
+                const { error } = await client.auth.signInWithPassword({
+                    email: emailVal,
+                    password: passVal
                 });
-
-                if (error) {
-                    console.error("❌ Login error:", error);
-                    alert("Login failed: " + error.message);
-                    return;
-                }
-
-                console.log("✅ Login successful!");
-                authForm.reset();
-
+                if (error) throw error;
+                console.log("✅ Login success");
             } else {
-                console.log("👤 Attempting registration with:", email);
-                const { data, error } = await window.supabase.auth.signUp({
-                    email: email,
-                    password: password
+                console.log("📝 Registering...");
+                const { error } = await client.auth.signUp({
+                    email: emailVal,
+                    password: passVal
                 });
-
-                if (error) {
-                    console.error("❌ Registration error:", error);
-                    alert("Registration failed: " + error.message);
-                    return;
-                }
-
-                console.log("✅ Registration successful!");
-                alert("Account created! You should be logged in now.");
-                authForm.reset();
+                if (error) throw error;
+                console.log("✅ Registration success");
+                alert("Account created!");
             }
 
-        } catch (error) {
-            console.error("❌ Auth error:", error);
-            alert("Error: " + error.message);
+            form.reset();
+
+        } catch (err) {
+            console.error("❌ Error:", err);
+            alert("Error: " + (err.message || "Auth failed"));
         } finally {
-            authBtn.disabled = false;
-            authBtn.textContent = isLoginMode ? "Login" : "Register";
+            btn.disabled = false;
+            btn.textContent = isLoginMode ? "Login" : "Register";
         }
     });
 
-    // ============================================
-    // SWITCH BETWEEN LOGIN AND REGISTER
-    // ============================================
-
-    if (authSwitchBtn) {
-        authSwitchBtn.addEventListener('click', function(event) {
-            event.preventDefault();
+    // Switch mode
+    if (switchBtn) {
+        switchBtn.addEventListener('click', (e) => {
+            e.preventDefault();
             isLoginMode = !isLoginMode;
-
-            authBtn.textContent = isLoginMode ? "Login" : "Register";
-            authSwitchBtn.textContent = isLoginMode ? "Register" : "Login";
-
-            authForm.reset();
-            console.log("🔄 Switched to:", isLoginMode ? "Login mode" : "Register mode");
+            btn.textContent = isLoginMode ? "Login" : "Register";
+            switchBtn.textContent = isLoginMode ? "Register" : "Login";
+            form.reset();
         });
     }
 
-    // ============================================
-    // LOGOUT
-    // ============================================
-
+    // Logout
     const logoutBtn = document.getElementById('logout-btn');
     if (logoutBtn) {
-        logoutBtn.addEventListener('click', async function() {
-            console.log("👋 Logging out...");
-
+        logoutBtn.addEventListener('click', async () => {
             try {
-                if (!window.supabase) {
-                    console.error("❌ Supabase not available");
-                    return;
-                }
-
-                const { error } = await window.supabase.auth.signOut();
-
-                if (error) {
-                    console.error("❌ Logout error:", error);
-                    alert("Logout failed: " + error.message);
-                    return;
-                }
-
-                console.log("✅ Logout successful!");
-                // app.js will handle showing login page
-
-            } catch (error) {
-                console.error("❌ Error during logout:", error);
-                alert("Error: " + error.message);
+                const client = window.supabase.createClient(
+                    process.env.VITE_SUPABASE_URL,
+                    process.env.VITE_SUPABASE_ANON_KEY
+                );
+                await client.auth.signOut();
+                console.log("✅ Logged out");
+            } catch (err) {
+                alert("Logout error: " + err.message);
             }
         });
     }
 
-    console.log("✅ Auth handlers setup complete");
+    console.log("✅ Auth ready");
 }
 
 console.log("✅ auth.js loaded");
