@@ -35,23 +35,30 @@ setTimeout(function() {
 }, 500);
 
 // Initialize Supabase
+//
+// NOTE: this is a plain static site with no build step (no Vite/webpack),
+// so there is no `process.env` in the browser — that was the root bug.
+// The anon key below is meant to be public: it's safe to ship in client-side
+// code as long as Row Level Security policies are the real access boundary
+// (see the `budgets`/`expenses` RLS policies in the Supabase schema).
 function initializeApp() {
     try {
-        const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
-        const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
+        const SUPABASE_URL = "https://dzejmfhqcayeblgyhdex.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6ZWptZmhxY2F5ZWJsZ3loZGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjQxMTIsImV4cCI6MjA5OTcwMDExMn0.Pu2J-dLg8ojPqQHj8wm0ugBd9zVlYyV0CPzevYjxCQM";
 
-        if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            console.error("❌ Supabase credentials not found!");
-            return;
-        }
+        // Keep a reference to the raw library before we overwrite
+        // window.supabase with the client instance below. auth.js reuses
+        // this same client rather than trying to build its own.
+        const supabaseLib = window.supabase;
 
         // Create Supabase client
-        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("✅ Connected to Supabase");
 
-        // Export to window IMMEDIATELY
+        // Export the CLIENT to window so other files (auth.js, budget.js, etc.)
+        // can call `supabase.from(...)` / `supabase.auth...` directly.
         window.supabase = supabase;
-        console.log("✅ Exported supabase to window.supabase");
+        console.log("✅ Exported supabase client to window.supabase");
 
         // Setup auth listener
         setupAuthListener();
@@ -142,6 +149,12 @@ async function loadUserData() {
         if (typeof updateBudgetDisplay === 'function') {
             updateBudgetDisplay();
         }
+        if (typeof populateCategorySelect === 'function') {
+            populateCategorySelect();
+        }
+        if (typeof renderSmartPace === 'function') {
+            renderSmartPace();
+        }
 
     } catch (error) {
         console.error("❌ Error loading user data:", error);
@@ -191,6 +204,10 @@ function showExpenses() {
 function openBudgetForm() {
     const modal = document.getElementById('budget-modal');
     if (modal) modal.classList.remove('hidden');
+
+    if (typeof populateCategoryCheckboxes === 'function') {
+        populateCategoryCheckboxes();
+    }
 }
 
 function closeBudgetModal() {
