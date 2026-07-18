@@ -42,29 +42,17 @@ function setupAuth() {
         btn.textContent = isLoginMode ? "Logging in..." : "Registering...";
 
         try {
-            // Get Supabase from window
-            const supabaseLib = window.supabase;
-            
-            if (!supabaseLib) {
-                throw new Error("Supabase library not loaded");
+            // Reuse the single Supabase client app.js already created.
+            // (Previously this tried to pull `createClient` back off
+            // `window.supabase` — but by the time auth.js runs, app.js has
+            // already overwritten `window.supabase` with the client
+            // *instance*, which has no `.createClient` method. That, plus
+            // the same process.env bug, is why login/register always failed.)
+            const client = window.supabase;
+
+            if (!client || typeof client.auth === 'undefined') {
+                throw new Error("Supabase client not ready yet — please wait a moment and try again");
             }
-
-            // Get the createClient function
-            const { createClient } = supabaseLib;
-            
-            if (!createClient) {
-                throw new Error("createClient not found");
-            }
-
-            // Create client
-            const url = process.env.VITE_SUPABASE_URL;
-            const key = process.env.VITE_SUPABASE_ANON_KEY;
-
-            if (!url || !key) {
-                throw new Error("Missing Supabase credentials");
-            }
-
-            const client = createClient(url, key);
 
             if (isLoginMode) {
                 console.log("🔑 Logging in...");
@@ -112,11 +100,7 @@ function setupAuth() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
-                const client = window.supabase.createClient(
-                    process.env.VITE_SUPABASE_URL,
-                    process.env.VITE_SUPABASE_ANON_KEY
-                );
-                await client.auth.signOut();
+                await window.supabase.auth.signOut();
                 console.log("✅ Logged out");
             } catch (err) {
                 alert("Logout error: " + err.message);
