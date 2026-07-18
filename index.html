@@ -87,11 +87,12 @@
             <div id="dashboard-section">
                 <!-- Smart Spending Pace (rule-based heuristic, not real ML) -->
                 <div id="smart-pace-card" class="hidden bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
-                    <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Smart Spending Pace</p>
-                    <h3 id="safe-daily-amount" class="text-3xl font-extrabold text-gray-900 mt-1">₹0.00 / day</h3>
-                    <p id="smart-pace-detail" class="text-sm text-gray-600 mt-1"></p>
+                    <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Daily Spending Guide</p>
+                    <h3 id="safe-daily-amount" class="text-3xl font-extrabold text-gray-900 mt-1">₹0.00</h3>
+                    <p class="text-sm text-gray-500">safe to spend today, and each day after, to stay within budget</p>
+                    <p id="smart-pace-detail" class="text-sm text-gray-600 mt-2"></p>
                     <p id="smart-pace-message" class="text-sm font-medium mt-1"></p>
-                    <p class="text-xs text-gray-400 mt-2">A simple rule-based estimate (remaining budget ÷ days left) — not AI/ML.</p>
+                    <p class="text-xs text-gray-400 mt-2">Just simple math based on your budget and the days left this month — not a prediction.</p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
@@ -118,6 +119,7 @@
                     <div style="height: 300px; position: relative;">
                         <canvas id="trendChart"></canvas>
                     </div>
+                    <p class="text-xs text-gray-400 mt-2">Green line: what you've actually spent so far this month. Dashed line: an even, no-surprises pace based on your budget. If green is above the dashes, you're spending faster than planned.</p>
                 </div>
             </div>
 
