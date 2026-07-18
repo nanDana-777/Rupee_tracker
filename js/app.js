@@ -1,19 +1,12 @@
 // ============================================
 // RupeeTracker - Main Application File
 // ============================================
-// This file MUST load FIRST in index.html
-// It initializes Supabase and sets up the app
-// ============================================
 
-// ============================================
-// 1. GLOBAL VARIABLES (accessible to all files)
-// ============================================
-
-let supabase = null;           // Supabase client (created below)
-let currentUser = null;        // Currently logged-in user
-let currentUserId = null;      // User's ID (for database queries)
-let currentBudget = null;      // User's budget object
-let currentExpenses = [];       // Array of user's expenses
+let supabase = null;
+let currentUser = null;
+let currentUserId = null;
+let currentBudget = null;
+let currentExpenses = [];
 
 const CATEGORIES = [
     "Food & Beverages",
@@ -31,10 +24,7 @@ const CATEGORIES = [
     "Other Expenses"
 ];
 
-// ============================================
-// 2. WAIT FOR SUPABASE LIBRARY TO LOAD
-// ============================================
-
+// Wait for Supabase library to load
 setTimeout(function() {
     if (window.supabase) {
         console.log("✅ Supabase library loaded successfully");
@@ -44,10 +34,7 @@ setTimeout(function() {
     }
 }, 500);
 
-// ============================================
-// 3. INITIALIZE SUPABASE CONNECTION
-// ============================================
-
+// Initialize Supabase
 function initializeApp() {
     try {
         const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
@@ -55,13 +42,16 @@ function initializeApp() {
 
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
             console.error("❌ Supabase credentials not found!");
-            console.error("Make sure .env has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
             return;
         }
 
-        // Create Supabase client (assign to existing variable, don't redeclare)
+        // Create Supabase client
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("✅ Connected to Supabase");
+
+        // Export to window IMMEDIATELY
+        window.supabase = supabase;
+        console.log("✅ Exported supabase to window.supabase");
 
         // Setup auth listener
         setupAuthListener();
@@ -74,10 +64,7 @@ function initializeApp() {
     }
 }
 
-// ============================================
-// 4. AUTHENTICATION STATE LISTENER
-// ============================================
-
+// Setup authentication listener
 function setupAuthListener() {
     supabase.auth.onAuthStateChange(async function(event, session) {
         console.log("🔐 Auth event:", event);
@@ -104,10 +91,7 @@ function setupAuthListener() {
     });
 }
 
-// ============================================
-// 5. LOAD USER DATA FROM DATABASE
-// ============================================
-
+// Load user data
 async function loadUserData() {
     try {
         if (!currentUserId) {
@@ -115,7 +99,7 @@ async function loadUserData() {
             return;
         }
 
-        console.log("📊 Loading user data for ID:", currentUserId);
+        console.log("📊 Loading user data...");
 
         // Fetch budget
         const { data: budgetData, error: budgetError } = await supabase
@@ -128,7 +112,7 @@ async function loadUserData() {
             console.error("❌ Error loading budget:", budgetError);
         } else if (budgetData) {
             currentBudget = budgetData;
-            console.log("✅ Budget loaded:", currentBudget);
+            console.log("✅ Budget loaded");
         } else {
             console.log("ℹ️ No budget set up yet");
             currentBudget = null;
@@ -148,29 +132,23 @@ async function loadUserData() {
             console.log("✅ Expenses loaded:", currentExpenses.length, "expenses");
         }
 
-        // Render charts and tables
+        // Render if functions exist
         if (typeof renderCharts === 'function') {
-            console.log("📈 Rendering charts...");
             renderCharts();
         }
         if (typeof populateExpenseTable === 'function') {
-            console.log("📋 Populating expense table...");
             populateExpenseTable();
         }
         if (typeof updateBudgetDisplay === 'function') {
-            console.log("💰 Updating budget display...");
             updateBudgetDisplay();
         }
 
     } catch (error) {
-        console.error("❌ Unexpected error loading user data:", error);
+        console.error("❌ Error loading user data:", error);
     }
 }
 
-// ============================================
-// 6. UI DISPLAY FUNCTIONS
-// ============================================
-
+// Show login page
 function showLoginPage() {
     const authPage = document.getElementById('auth-page');
     const appPage = document.getElementById('app-page');
@@ -181,6 +159,7 @@ function showLoginPage() {
     console.log("👤 Showing login page");
 }
 
+// Show dashboard
 function showDashboard() {
     const authPage = document.getElementById('auth-page');
     const appPage = document.getElementById('app-page');
@@ -191,11 +170,8 @@ function showDashboard() {
     console.log("📊 Showing dashboard");
 }
 
-// ============================================
-// 7. GLOBAL FUNCTIONS (used by other files)
-// ============================================
-
-function showDashboard() {
+// Navigation functions
+function showDashboardSection() {
     const dashboardSection = document.getElementById('dashboard-section');
     const expensesSection = document.getElementById('expenses-section');
     
@@ -211,6 +187,7 @@ function showExpenses() {
     if (expensesSection) expensesSection.classList.remove('hidden');
 }
 
+// Modal functions
 function openBudgetForm() {
     const modal = document.getElementById('budget-modal');
     if (modal) modal.classList.remove('hidden');
@@ -225,7 +202,6 @@ function openExpenseForm() {
     const modal = document.getElementById('expense-modal');
     if (modal) modal.classList.remove('hidden');
     
-    // Set date to today
     const expenseDateInput = document.getElementById('expense-date');
     if (expenseDateInput) {
         expenseDateInput.value = new Date().toISOString().split('T')[0];
@@ -237,9 +213,4 @@ function closeExpenseModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-// ============================================
-// 8. INITIALIZATION COMPLETE
-// ============================================
-
 console.log("✅ app.js loaded successfully");
-console.log("📌 App is ready. Waiting for user action...");
