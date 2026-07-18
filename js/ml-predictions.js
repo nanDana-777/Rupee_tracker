@@ -70,14 +70,14 @@ function renderSmartPace() {
 
     card.classList.remove('hidden');
 
-    amountEl.textContent = '₹' + result.safeDailySpend.toFixed(2) + ' / day';
-    detailEl.textContent = '₹' + Math.max(result.remaining, 0).toFixed(2) + ' left for ' +
-        result.daysLeft + ' day' + (result.daysLeft === 1 ? '' : 's') + ' remaining this month';
+    amountEl.textContent = '₹' + result.safeDailySpend.toFixed(2);
+    detailEl.textContent = 'You have ₹' + Math.max(result.remaining, 0).toFixed(2) + ' left to spend over the next ' +
+        result.daysLeft + ' day' + (result.daysLeft === 1 ? '' : 's') + ' of this month.';
 
     const messages = {
-        'over': { text: '⚠️ You have gone over your spendable budget for this month.', cls: 'text-red-600' },
-        'fast': { text: '🐇 You are spending faster than your safe daily pace — consider slowing down.', cls: 'text-amber-600' },
-        'on-track': { text: '✅ You are on track to stay within budget this month.', cls: 'text-emerald-600' }
+        'over': { text: '⚠️ You\'ve already spent more than your budget for this month.', cls: 'text-red-600' },
+        'fast': { text: '🐇 You\'re spending a bit faster than planned — try to ease up a little to stay on budget.', cls: 'text-amber-600' },
+        'on-track': { text: '✅ Nice — you\'re on track to stay within budget this month.', cls: 'text-emerald-600' }
     };
 
     const m = messages[result.status] || messages['on-track'];
