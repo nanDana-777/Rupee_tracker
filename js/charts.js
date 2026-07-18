@@ -3,7 +3,7 @@
 // Renders the three Chart.js visualizations:
 //   - budgetChart:  planned allocation by category (pie)
 //   - expenseChart: actual spend by category (pie)
-//   - trendChart:   cumulative spend over the current month (line)
+//   - trendChart:   actual spend this month vs. an even budget pace (line)
 // ============================================
 
 let budgetChartInstance = null;
@@ -15,6 +15,20 @@ const CHART_COLORS = [
     '#dc2626', '#4f46e5', '#0d9488', '#65a30d', '#c026d3',
     '#ea580c', '#2563eb', '#71717a'
 ];
+
+// Fixed category -> color assignment (built once, from the master CATEGORIES
+// list in app.js) so "Food & Beverages" is always the same color whether
+// it's shown in the Budget Allocations chart or the Actual Spending chart.
+// Positional indexing was the old approach, but each chart can have a
+// different subset/order of categories present, which made colors
+// mismatch between the two charts for the same category.
+const CATEGORY_COLORS = {};
+(typeof CATEGORIES !== 'undefined' ? CATEGORIES : []).forEach(function (cat, i) {
+    CATEGORY_COLORS[cat] = CHART_COLORS[i % CHART_COLORS.length];
+});
+function colorForCategory(cat) {
+    return CATEGORY_COLORS[cat] || '#9ca3af';
+}
 
 function renderCharts() {
     renderBudgetChart();
@@ -39,7 +53,7 @@ function renderBudgetChart() {
             labels: labels,
             datasets: [{
                 data: values,
-                backgroundColor: labels.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; })
+                backgroundColor: labels.map(colorForCategory)
             }]
         },
         options: {
@@ -71,7 +85,7 @@ function renderExpenseChart() {
             labels: labels,
             datasets: [{
                 data: values,
-                backgroundColor: labels.map(function (_, i) { return CHART_COLORS[i % CHART_COLORS.length]; })
+                backgroundColor: labels.map(colorForCategory)
             }]
         },
         options: {
@@ -87,49 +101,87 @@ function renderTrendChart() {
     if (!canvas || typeof Chart === 'undefined') return;
 
     if (trendChartInstance) trendChartInstance.destroy();
-    if (!currentExpenses || currentExpenses.length === 0) return;
 
-    // Group this month's expenses by date, then build a running
-    // cumulative total so the line reads as "total spent so far".
     const now = new Date();
-    const monthExpenses = currentExpenses.filter(function (expense) {
+    const year = now.getFullYear();
+    const month = now.getMonth();
+    const today = now.getDate();
+    const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+    const monthExpenses = (currentExpenses || []).filter(function (expense) {
         const d = new Date(expense.expense_date);
-        return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+        return d.getMonth() === month && d.getFullYear() === year;
     });
 
-    if (monthExpenses.length === 0) return;
+    if (monthExpenses.length === 0 && !currentBudget) return; // nothing meaningful to plot yet
 
-    const byDate = {};
+    // Total spent on each individual day (day-of-month -> amount)
+    const spentOnDay = {};
     monthExpenses.forEach(function (expense) {
-        byDate[expense.expense_date] = (byDate[expense.expense_date] || 0) + Number(expense.amount);
+        const day = new Date(expense.expense_date).getDate();
+        spentOnDay[day] = (spentOnDay[day] || 0) + Number(expense.amount);
     });
 
-    const sortedDates = Object.keys(byDate).sort();
-
+    // Running cumulative total across every day of the month so far
+    // (day 1 -> today). Days beyond today are left as null so the line
+    // simply stops "now" instead of drawing a flat guess forward.
+    const dayLabels = [];
+    const actualCumulative = [];
     let running = 0;
-    const cumulative = sortedDates.map(function (date) {
-        running += byDate[date];
-        return running;
-    });
+    for (let day = 1; day <= daysInMonth; day++) {
+        dayLabels.push(day);
+        if (day <= today) {
+            running += (spentOnDay[day] || 0);
+            actualCumulative.push(running);
+        } else {
+            actualCumulative.push(null);
+        }
+    }
+
+    const datasets = [{
+        label: "What you've actually spent",
+        data: actualCumulative,
+        borderColor: '#059669',
+        backgroundColor: 'rgba(5, 150, 105, 0.12)',
+        fill: true,
+        tension: 0.25,
+        spanGaps: true
+    }];
+
+    // Reference line: what spending would look like if spread perfectly
+    // evenly across the whole month. This is what ties the chart to the
+    // Daily Spending Guide card above - if the solid line is above this
+    // dashed line, spending is running ahead of an even pace.
+    if (currentBudget) {
+        const total = Number(currentBudget.total_budget) || 0;
+        const savingsGoal = Number(currentBudget.savings_goal) || 0;
+        const spendableTotal = Math.max(total - savingsGoal, 0);
+        const perDay = spendableTotal / daysInMonth;
+
+        datasets.push({
+            label: 'Even pace for your budget',
+            data: dayLabels.map(function (day) { return perDay * day; }),
+            borderColor: '#9ca3af',
+            borderDash: [6, 4],
+            pointRadius: 0,
+            fill: false,
+            tension: 0
+        });
+    }
 
     trendChartInstance = new Chart(canvas, {
         type: 'line',
-        data: {
-            labels: sortedDates.map(formatDate),
-            datasets: [{
-                label: 'Cumulative spend (₹)',
-                data: cumulative,
-                borderColor: '#059669',
-                backgroundColor: 'rgba(5, 150, 105, 0.1)',
-                fill: true,
-                tension: 0.25
-            }]
-        },
+        data: { labels: dayLabels, datasets: datasets },
         options: {
             responsive: true,
             maintainAspectRatio: false,
-            plugins: { legend: { display: false } },
-            scales: { y: { beginAtZero: true } }
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+            },
+            scales: {
+                y: { beginAtZero: true },
+                x: { title: { display: true, text: 'Day of the month', font: { size: 10 } } }
+            }
         }
     });
 }
