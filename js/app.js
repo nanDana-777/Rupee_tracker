@@ -35,18 +35,14 @@ const CATEGORIES = [
 // 2. WAIT FOR SUPABASE LIBRARY TO LOAD
 // ============================================
 
-// The Supabase library loads from CDN asynchronously
-// We need to wait for it to be available before using it
-
 setTimeout(function() {
-    // Check if window.supabase exists (library loaded from CDN)
     if (window.supabase) {
         console.log("✅ Supabase library loaded successfully");
         initializeApp();
     } else {
         console.error("❌ Supabase library failed to load");
     }
-}, 500); // Wait 500ms for CDN to load
+}, 500);
 
 // ============================================
 // 3. INITIALIZE SUPABASE CONNECTION
@@ -54,28 +50,23 @@ setTimeout(function() {
 
 function initializeApp() {
     try {
-        // Read environment variables
-        // In local: from .env file
-        // In Vercel: from dashboard environment variables
         const SUPABASE_URL = process.env.VITE_SUPABASE_URL;
         const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY;
 
-        // Validate credentials exist
         if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
-            console.error("❌ Supabase credentials not found in environment variables!");
-            console.error("Make sure .env file has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
+            console.error("❌ Supabase credentials not found!");
+            console.error("Make sure .env has VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY");
             return;
         }
 
-        // Create Supabase client
-        // This is the object all other files will use
+        // Create Supabase client (assign to existing variable, don't redeclare)
         supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("✅ Connected to Supabase");
 
-        // Set up authentication state listener
+        // Setup auth listener
         setupAuthListener();
 
-        // Initialize UI (show login page)
+        // Show login page
         showLoginPage();
 
     } catch (error) {
@@ -88,31 +79,19 @@ function initializeApp() {
 // ============================================
 
 function setupAuthListener() {
-    // supabase.auth.onAuthStateChange listens for auth events
-    // Runs when:
-    // - User logs in
-    // - User logs out
-    // - Session changes
-    // - Page loads (checks if user already logged in)
-
     supabase.auth.onAuthStateChange(async function(event, session) {
         console.log("🔐 Auth event:", event);
 
         if (session && session.user) {
-            // User is logged in
             console.log("✅ User logged in:", session.user.id);
             
             currentUser = session.user;
             currentUserId = session.user.id;
             
-            // Show dashboard, hide login
             showDashboard();
-            
-            // Load user's data from database
             await loadUserData();
 
         } else {
-            // User is logged out
             console.log("❌ User logged out");
             
             currentUser = null;
@@ -120,7 +99,6 @@ function setupAuthListener() {
             currentBudget = null;
             currentExpenses = [];
             
-            // Show login, hide dashboard
             showLoginPage();
         }
     });
@@ -139,10 +117,7 @@ async function loadUserData() {
 
         console.log("📊 Loading user data for ID:", currentUserId);
 
-        // Fetch budget from database
-        // .select('*') = get all columns
-        // .eq('user_id', currentUserId) = where user_id matches
-        // .maybeSingle() = expect 0 or 1 result
+        // Fetch budget
         const { data: budgetData, error: budgetError } = await supabase
             .from('budgets')
             .select('*')
@@ -159,8 +134,7 @@ async function loadUserData() {
             currentBudget = null;
         }
 
-        // Fetch expenses from database
-        // .order('expense_date', { ascending: false }) = sort by date, newest first
+        // Fetch expenses
         const { data: expenseData, error: expenseError } = await supabase
             .from('expenses')
             .select('*')
@@ -174,19 +148,18 @@ async function loadUserData() {
             console.log("✅ Expenses loaded:", currentExpenses.length, "expenses");
         }
 
-        // Notify other files that data is loaded
-        // They can now use currentBudget and currentExpenses
-        if (window.renderCharts) {
+        // Render charts and tables
+        if (typeof renderCharts === 'function') {
             console.log("📈 Rendering charts...");
-            window.renderCharts();
+            renderCharts();
         }
-        if (window.populateExpenseTable) {
+        if (typeof populateExpenseTable === 'function') {
             console.log("📋 Populating expense table...");
-            window.populateExpenseTable();
+            populateExpenseTable();
         }
-        if (window.updateBudgetDisplay) {
+        if (typeof updateBudgetDisplay === 'function') {
             console.log("💰 Updating budget display...");
-            window.updateBudgetDisplay();
+            updateBudgetDisplay();
         }
 
     } catch (error) {
@@ -222,10 +195,7 @@ function showDashboard() {
 // 7. GLOBAL FUNCTIONS (used by other files)
 // ============================================
 
-// These functions are called by other JavaScript files
-// They're defined here so all files can access them
-
-function showDashboardSection() {
+function showDashboard() {
     const dashboardSection = document.getElementById('dashboard-section');
     const expensesSection = document.getElementById('expenses-section');
     
@@ -233,7 +203,7 @@ function showDashboardSection() {
     if (expensesSection) expensesSection.classList.add('hidden');
 }
 
-function showExpensesSection() {
+function showExpenses() {
     const dashboardSection = document.getElementById('dashboard-section');
     const expensesSection = document.getElementById('expenses-section');
     
@@ -241,7 +211,7 @@ function showExpensesSection() {
     if (expensesSection) expensesSection.classList.remove('hidden');
 }
 
-function openBudgetModal() {
+function openBudgetForm() {
     const modal = document.getElementById('budget-modal');
     if (modal) modal.classList.remove('hidden');
 }
@@ -251,7 +221,7 @@ function closeBudgetModal() {
     if (modal) modal.classList.add('hidden');
 }
 
-function openExpenseModal() {
+function openExpenseForm() {
     const modal = document.getElementById('expense-modal');
     if (modal) modal.classList.remove('hidden');
     
@@ -268,28 +238,7 @@ function closeExpenseModal() {
 }
 
 // ============================================
-// 8. EXPORT SUPABASE FOR OTHER FILES
-// ============================================
-
-// Make supabase available globally
-window.supabase = supabase;
-window.currentUser = currentUser;
-window.currentUserId = currentUserId;
-window.currentBudget = currentBudget;
-window.currentExpenses = currentExpenses;
-window.CATEGORIES = CATEGORIES;
-
-// Make functions available globally
-window.showDashboardSection = showDashboardSection;
-window.showExpensesSection = showExpensesSection;
-window.openBudgetModal = openBudgetModal;
-window.closeBudgetModal = closeBudgetModal;
-window.openExpenseModal = openExpenseModal;
-window.closeExpenseModal = closeExpenseModal;
-window.loadUserData = loadUserData;
-
-// ============================================
-// 9. INITIALIZATION COMPLETE
+// 8. INITIALIZATION COMPLETE
 // ============================================
 
 console.log("✅ app.js loaded successfully");
