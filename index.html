@@ -55,17 +55,17 @@
     <!-- DASHBOARD PAGE (hidden initially, shown after login) -->
     <div id="app-page" class="hidden">
         <!-- Navigation Bar -->
-        <nav class="bg-emerald-700 text-white py-4 px-6 flex justify-between items-center shadow-md">
-            <h1 class="text-xl font-bold">₹ RupeeTracker</h1>
-            <div class="space-x-3">
-                <button onclick="showDashboardSection()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
-                <button onclick="showExpenses()" class="px-3 py-1.5 rounded hover:bg-emerald-800 font-medium">Expenses</button>
-                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-3 py-1.5 rounded font-medium">Logout</button>
+        <nav class="bg-emerald-700 text-white py-3 px-4 sm:py-4 sm:px-6 flex flex-wrap justify-between items-center gap-2 shadow-md">
+            <h1 class="text-lg sm:text-xl font-bold">₹ RupeeTracker</h1>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="showDashboardSection()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
+                <button onclick="showExpenses()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium">Expenses</button>
+                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded font-medium">Logout</button>
             </div>
         </nav>
 
         <!-- Main Content Area -->
-        <div class="max-w-6xl mx-auto p-6">
+        <div class="max-w-6xl mx-auto p-3 sm:p-6">
             
             <!-- Budget Summary Card -->
             <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
@@ -73,7 +73,7 @@
                 <h2 id="display-budget" class="text-4xl font-extrabold text-gray-900">₹0.00</h2>
                 <p id="display-spendable" class="text-sm text-gray-600 mt-2">Spendable: ₹0.00 (Savings Goal: ₹0.00)</p>
                 
-                <div class="flex gap-2 mt-4">
+                <div class="flex flex-col sm:flex-row gap-2 mt-4">
                     <button onclick="openBudgetForm()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-4 py-2 rounded-lg">
                         ✏️ Setup Budget
                     </button>
@@ -98,13 +98,17 @@
                     <!-- Budget Pie Chart -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h3 class="text-lg font-bold mb-4 text-gray-800">Budget Allocations</h3>
-                        <canvas id="budgetChart"></canvas>
+                        <div style="height: 260px; position: relative;">
+                            <canvas id="budgetChart"></canvas>
+                        </div>
                     </div>
                     
                     <!-- Expense Pie Chart -->
                     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                         <h3 class="text-lg font-bold mb-4 text-gray-800">Actual Spending</h3>
-                        <canvas id="expenseChart"></canvas>
+                        <div style="height: 260px; position: relative;">
+                            <canvas id="expenseChart"></canvas>
+                        </div>
                     </div>
                 </div>
                 
@@ -121,7 +125,7 @@
             <div id="expenses-section" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">All Expenses</h3>
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-sm">
+                    <table class="w-full text-left text-xs sm:text-sm">
                         <thead>
                             <tr class="bg-gray-100 text-gray-700">
                                 <th class="p-3 border-b">Date</th>
