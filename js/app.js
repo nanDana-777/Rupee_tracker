@@ -2,7 +2,7 @@
 // RupeeTracker - Main Application File
 // ============================================
 
-let supabase = null;
+let sb = null;
 let currentUser = null;
 let currentUserId = null;
 let currentBudget = null;
@@ -58,19 +58,14 @@ function initializeApp() {
         const SUPABASE_URL = "https://dzejmfhqcayeblgyhdex.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR6ZWptZmhxY2F5ZWJsZ3loZGV4Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjQxMTIsImV4cCI6MjA5OTcwMDExMn0.Pu2J-dLg8ojPqQHj8wm0ugBd9zVlYyV0CPzevYjxCQM";
 
-        // Keep a reference to the raw library before we overwrite
-        // window.supabase with the client instance below. auth.js reuses
-        // this same client rather than trying to build its own.
-        const supabaseLib = window.supabase;
-
-        // Create Supabase client
-        supabase = supabaseLib.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Create the client into `sb`, WITHOUT touching window.supabase —
+        // leaving the CDN library's own global alone is what avoids the
+        // "Identifier 'supabase' has already been declared" collision.
+        // auth.js / budget.js / expenses.js all reuse this same `sb`
+        // top-level variable directly (classic <script> tags share one
+        // global scope, so no window. prefix or import is needed).
+        sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
         console.log("✅ Connected to Supabase");
-
-        // Export the CLIENT to window so other files (auth.js, budget.js, etc.)
-        // can call `supabase.from(...)` / `supabase.auth...` directly.
-        window.supabase = supabase;
-        console.log("✅ Exported supabase client to window.supabase");
 
         // Let other scripts know the client is genuinely ready, instead of
         // making them guess with their own timeout (that's what caused the
@@ -91,7 +86,7 @@ function initializeApp() {
 
 // Setup authentication listener
 function setupAuthListener() {
-    supabase.auth.onAuthStateChange(async function(event, session) {
+    sb.auth.onAuthStateChange(async function(event, session) {
         console.log("🔐 Auth event:", event);
 
         if (session && session.user) {
@@ -127,7 +122,7 @@ async function loadUserData() {
         console.log("📊 Loading user data...");
 
         // Fetch budget
-        const { data: budgetData, error: budgetError } = await supabase
+        const { data: budgetData, error: budgetError } = await sb
             .from('budgets')
             .select('*')
             .eq('user_id', currentUserId)
@@ -144,7 +139,7 @@ async function loadUserData() {
         }
 
         // Fetch expenses
-        const { data: expenseData, error: expenseError } = await supabase
+        const { data: expenseData, error: expenseError } = await sb
             .from('expenses')
             .select('*')
             .eq('user_id', currentUserId)
