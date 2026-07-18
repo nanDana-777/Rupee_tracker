@@ -94,7 +94,7 @@ if (budgetForm) {
             let result;
             if (currentBudget && currentBudget.id) {
                 // Update the existing budget row
-                result = await supabase
+                result = await sb
                     .from('budgets')
                     .update(payload)
                     .eq('id', currentBudget.id)
@@ -102,7 +102,7 @@ if (budgetForm) {
                     .maybeSingle();
             } else {
                 // First-time budget setup for this user
-                result = await supabase
+                result = await sb
                     .from('budgets')
                     .insert(payload)
                     .select()
