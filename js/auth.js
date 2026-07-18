@@ -66,7 +66,7 @@ function setupAuth() {
         // Defensive check (belt-and-suspenders): the button being disabled
         // until 'supabase-ready' should already prevent this, but guard
         // against it anyway in case of a hard-reload edge case.
-        if (!supabase || typeof supabase.auth === 'undefined') {
+        if (!sb || typeof sb.auth === 'undefined') {
             alert("Still connecting to the server — please wait a moment and try again");
             return;
         }
@@ -76,11 +76,11 @@ function setupAuth() {
 
         try {
             // Reuse the single Supabase client app.js already created
-            // (it's a shared top-level `let supabase` — visible here
-            // directly since classic <script> tags share one global scope).
+            // (it's a shared top-level `let sb` — visible here directly
+            // since classic <script> tags share one global scope).
             if (isLoginMode) {
                 console.log("🔑 Logging in...");
-                const { error } = await supabase.auth.signInWithPassword({
+                const { error } = await sb.auth.signInWithPassword({
                     email: emailVal,
                     password: passVal
                 });
@@ -88,7 +88,7 @@ function setupAuth() {
                 console.log("✅ Login success");
             } else {
                 console.log("📝 Registering...");
-                const { error } = await supabase.auth.signUp({
+                const { error } = await sb.auth.signUp({
                     email: emailVal,
                     password: passVal
                 });
@@ -124,7 +124,7 @@ function setupAuth() {
     if (logoutBtn) {
         logoutBtn.addEventListener('click', async () => {
             try {
-                await supabase.auth.signOut();
+                await sb.auth.signOut();
                 console.log("✅ Logged out");
             } catch (err) {
                 alert("Logout error: " + err.message);
