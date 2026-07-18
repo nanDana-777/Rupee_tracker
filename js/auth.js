@@ -94,7 +94,13 @@ function setupAuth() {
                 });
                 if (error) throw error;
                 console.log("✅ Registration success");
-                alert("Account created!");
+                alert("Account created! (If your Supabase project still requires email confirmation, check your inbox first — otherwise you're logged in already.)");
+                // Switch the form to Login mode so a second submit can't
+                // accidentally call signUp() again on the same email —
+                // that's what caused the rate-limit errors.
+                isLoginMode = true;
+                btn.textContent = "Login";
+                if (switchBtn) switchBtn.textContent = "Register";
             }
 
             form.reset();
