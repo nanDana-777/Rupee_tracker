@@ -54,7 +54,7 @@ if (expenseForm) {
         }
 
         try {
-            const { data, error } = await supabase
+            const { data, error } = await sb
                 .from('expenses')
                 .insert({
                     user_id: currentUserId,
@@ -128,7 +128,7 @@ async function deleteExpense(expenseId) {
     if (!confirm("Delete this expense?")) return;
 
     try {
-        const { error } = await supabase
+        const { error } = await sb
             .from('expenses')
             .delete()
             .eq('id', expenseId);
