@@ -28,7 +28,10 @@
 
 html, body {
     height: 100%;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    /* Inter/Manrope are loaded via Google Fonts in index.html and mapped
+       onto Tailwind's font-sans / font-display utilities there. This
+       fallback stack only matters if the web fonts fail to load. */
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
 }
@@ -37,6 +40,13 @@ body {
     background-color: var(--color-gray-light);
     color: var(--color-gray-dark);
     line-height: 1.6;
+}
+
+/* Money and other figures where digits should line up rather than
+   jitter in width as they change (0-9 all take equal horizontal space
+   with tabular-nums, which is how spreadsheets and banking apps do it) */
+.money, .tabular-nums {
+    font-variant-numeric: tabular-nums;
 }
 
 /* ============================================
@@ -158,6 +168,52 @@ button:active {
 .modal-overlay {
     backdrop-filter: blur(4px);
     background-color: rgba(0, 0, 0, 0.5);
+}
+
+/* Modal transition: the overlay fades, the inner panel fades + scales
+   up slightly. Opening/closing is choreographed in js/ui.js
+   (openModal/closeModal) - this CSS just defines the two states. */
+#budget-modal, #expense-modal, #confirm-modal {
+    transition: opacity 0.2s ease;
+    opacity: 0;
+}
+#budget-modal.modal-open, #expense-modal.modal-open, #confirm-modal.modal-open {
+    opacity: 1;
+}
+#budget-modal > div, #expense-modal > div, #confirm-modal > div {
+    transition: transform 0.2s ease, opacity 0.2s ease;
+    transform: scale(0.95);
+    opacity: 0;
+}
+#budget-modal.modal-open > div, #expense-modal.modal-open > div, #confirm-modal.modal-open > div {
+    transform: scale(1);
+    opacity: 1;
+}
+
+/* ============================================
+   Toast Notifications
+   ============================================ */
+
+.toast-item {
+    opacity: 0;
+    transform: translateX(1rem);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+.toast-item.toast-visible {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+/* ============================================
+   Card hover lift (used on dashboard cards)
+   ============================================ */
+
+.lift-on-hover {
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.lift-on-hover:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.1);
 }
 
 /* ============================================
