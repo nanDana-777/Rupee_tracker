@@ -7,7 +7,23 @@
     
     <!-- Tailwind CSS from CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
-    
+    <script>
+        // Map Tailwind's font-sans utility (already used on <body>) to Inter
+        // instead of the default system stack - no other class names change.
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] }
+                }
+            }
+        };
+    </script>
+
+    <!-- Inter typeface -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
     <!-- Chart.js for charts -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
@@ -55,12 +71,12 @@
     <!-- DASHBOARD PAGE (hidden initially, shown after login) -->
     <div id="app-page" class="hidden">
         <!-- Navigation Bar -->
-        <nav class="bg-emerald-700 text-white py-3 px-4 sm:py-4 sm:px-6 flex flex-wrap justify-between items-center gap-2 shadow-md">
+        <nav class="bg-gradient-to-r from-emerald-700 to-emerald-600 text-white py-3 px-4 sm:py-4 sm:px-6 flex flex-wrap justify-between items-center gap-2 shadow-md">
             <h1 class="text-lg sm:text-xl font-bold">₹ RupeeTracker</h1>
             <div class="flex flex-wrap gap-2">
-                <button onclick="showDashboardSection()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium">Dashboard</button>
-                <button onclick="showExpenses()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium">Expenses</button>
-                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded font-medium">Logout</button>
+                <button onclick="showDashboardSection()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium transition-colors">Dashboard</button>
+                <button onclick="showExpenses()" class="px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded hover:bg-emerald-800 font-medium transition-colors">Expenses</button>
+                <button id="logout-btn" class="bg-red-600 hover:bg-red-700 px-2.5 py-1.5 text-sm sm:text-base sm:px-3 rounded font-medium transition-colors">Logout</button>
             </div>
         </nav>
 
@@ -68,16 +84,21 @@
         <div class="max-w-6xl mx-auto p-3 sm:p-6">
             
             <!-- Budget Summary Card -->
-            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+            <div class="bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6 transition-shadow duration-200 hover:shadow-md">
                 <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Total Monthly Budget</p>
                 <h2 id="display-budget" class="text-4xl font-extrabold text-gray-900">₹0.00</h2>
                 <p id="display-spendable" class="text-sm text-gray-600 mt-2">Spendable: ₹0.00 (Savings Goal: ₹0.00)</p>
+
+                <div class="w-full bg-gray-100 rounded-full h-2.5 mt-3 overflow-hidden">
+                    <div id="budget-progress-bar" class="h-2.5 rounded-full transition-all duration-500 ease-out" style="width: 0%; background-color: #059669;"></div>
+                </div>
+                <p id="budget-progress-label" class="text-xs text-gray-500 mt-1"></p>
                 
                 <div class="flex flex-col sm:flex-row gap-2 mt-4">
-                    <button onclick="openBudgetForm()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-4 py-2 rounded-lg">
+                    <button onclick="openBudgetForm()" class="bg-emerald-100 hover:bg-emerald-200 text-emerald-800 font-bold px-4 py-2 rounded-lg transition-colors">
                         ✏️ Setup Budget
                     </button>
-                    <button onclick="openExpenseForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg">
+                    <button onclick="openExpenseForm()" class="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-4 py-2 rounded-lg transition-colors">
                         ➕ Add Expense
                     </button>
                 </div>
@@ -86,7 +107,7 @@
             <!-- Dashboard Section -->
             <div id="dashboard-section">
                 <!-- Smart Spending Pace (rule-based heuristic, not real ML) -->
-                <div id="smart-pace-card" class="hidden bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6">
+                <div id="smart-pace-card" class="hidden bg-white rounded-xl p-6 shadow-sm border border-gray-100 mb-6 transition-shadow duration-200 hover:shadow-md">
                     <p class="text-sm text-gray-500 uppercase tracking-wider font-bold">Daily Spending Guide</p>
                     <h3 id="safe-daily-amount" class="text-3xl font-extrabold text-gray-900 mt-1">₹0.00</h3>
                     <p class="text-sm text-gray-500">safe to spend today, and each day after, to stay within budget</p>
@@ -97,7 +118,7 @@
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                     <!-- Budget Pie Chart -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-shadow duration-200 hover:shadow-md">
                         <h3 class="text-lg font-bold mb-4 text-gray-800">Budget Allocations</h3>
                         <div style="height: 260px; position: relative;">
                             <canvas id="budgetChart"></canvas>
@@ -105,16 +126,25 @@
                     </div>
                     
                     <!-- Expense Pie Chart -->
-                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-shadow duration-200 hover:shadow-md">
                         <h3 class="text-lg font-bold mb-4 text-gray-800">Actual Spending</h3>
                         <div style="height: 260px; position: relative;">
                             <canvas id="expenseChart"></canvas>
                         </div>
                     </div>
                 </div>
+
+                <!-- Budget vs Actual Comparison Chart -->
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-shadow duration-200 hover:shadow-md mb-6">
+                    <h3 class="text-lg font-bold mb-4 text-gray-800">Budget vs Actual by Category</h3>
+                    <div style="height: 300px; position: relative;">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-2">Compares what you planned to spend in each category against what you've actually spent so far this month — the fastest way to see exactly where you overspent.</p>
+                </div>
                 
                 <!-- Spending Trend Chart -->
-                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 transition-shadow duration-200 hover:shadow-md">
                     <h3 class="text-lg font-bold mb-4 text-gray-800">Spending Trend</h3>
                     <div style="height: 300px; position: relative;">
                         <canvas id="trendChart"></canvas>
@@ -126,6 +156,28 @@
             <!-- Expenses Section -->
             <div id="expenses-section" class="hidden bg-white rounded-xl shadow-sm border border-gray-100 p-6">
                 <h3 class="text-xl font-bold mb-4 text-gray-800 border-b pb-2">All Expenses</h3>
+
+                <!-- Search / Filter / Sort / Export controls -->
+                <div class="flex flex-col sm:flex-row gap-2 mb-4">
+                    <input type="text" id="expense-search" placeholder="Search name or description..."
+                        class="flex-1 min-w-0 px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                    <select id="expense-filter-category"
+                        class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <!-- Populated by JavaScript -->
+                    </select>
+                    <select id="expense-sort"
+                        class="px-3 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                        <option value="date-desc">Newest first</option>
+                        <option value="date-asc">Oldest first</option>
+                        <option value="amount-desc">Amount: high to low</option>
+                        <option value="amount-asc">Amount: low to high</option>
+                    </select>
+                    <button id="export-csv-btn" type="button"
+                        class="px-3 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg text-sm font-semibold whitespace-nowrap transition-colors">
+                        ⬇️ Export CSV
+                    </button>
+                </div>
+
                 <div class="overflow-x-auto">
                     <table class="w-full text-left text-xs sm:text-sm">
                         <thead>
@@ -147,8 +199,8 @@
     </div>
 
     <!-- BUDGET SETUP MODAL (Hidden initially) -->
-    <div id="budget-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+    <div id="budget-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 modal-overlay">
+        <div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-md p-6">
             <h3 class="text-xl font-bold mb-4 text-emerald-800">Set Monthly Budget</h3>
             
             <form id="budget-form" class="space-y-4">
@@ -179,9 +231,9 @@
     </div>
 
     <!-- EXPENSE FORM MODAL (Hidden initially) -->
-    <div id="expense-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-        <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
-            <h3 class="text-xl font-bold mb-4 text-emerald-800">Add New Expense</h3>
+    <div id="expense-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 modal-overlay">
+        <div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+            <h3 id="expense-modal-title" class="text-xl font-bold mb-4 text-emerald-800">Add New Expense</h3>
             
             <form id="expense-form" class="space-y-4">
                 <div>
@@ -213,14 +265,28 @@
                 
                 <div class="flex justify-end space-x-2 pt-2 border-t">
                     <button type="button" onclick="closeExpenseModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">Add Expense</button>
+                    <button type="submit" id="expense-submit-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg">Add Expense</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- CONFIRM DIALOG (replaces native confirm() popups) -->
+    <div id="confirm-modal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50 modal-overlay">
+        <div class="modal-content bg-white rounded-xl shadow-xl w-full max-w-sm p-6">
+            <p id="confirm-message" class="text-gray-800 font-medium mb-6"></p>
+            <div class="flex justify-end gap-2">
+                <button type="button" onclick="closeConfirmModal()" class="px-4 py-2 border rounded-lg hover:bg-gray-100">Cancel</button>
+                <button type="button" id="confirm-ok-btn" class="px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-bold rounded-lg">Confirm</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast notifications (replaces native alert() popups) -->
+    <div id="toast-container" class="fixed bottom-4 left-1/2 -translate-x-1/2 z-[100] flex flex-col items-stretch gap-2 px-4 w-full max-w-sm pointer-events-none"></div>
+
     <!-- LOAD ALL JAVASCRIPT FILES -->
-    <!-- Order matters! app.js must load first (initializes Supabase) -->
+    <!-- Order matters! app.js must load first (initializes Supabase + shared toast/modal helpers) -->
     <script src="js/app.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/budget.js"></script>
