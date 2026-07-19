@@ -54,7 +54,7 @@ if (budgetForm) {
         e.preventDefault();
 
         if (!currentUserId) {
-            alert("You must be logged in to save a budget");
+            showToast("You must be logged in to save a budget", "error");
             return;
         }
 
@@ -120,10 +120,11 @@ if (budgetForm) {
             if (typeof renderSmartPace === 'function') renderSmartPace();
 
             closeBudgetModal();
+            showToast("Budget saved", "success");
 
         } catch (error) {
             console.error("❌ Error saving budget:", error);
-            alert("Error saving budget: " + (error.message || "Please try again"));
+            showToast("Error saving budget: " + (error.message || "Please try again"), "error");
         } finally {
             if (submitBtn) {
                 submitBtn.disabled = false;
@@ -142,6 +143,7 @@ function updateBudgetDisplay() {
     if (!currentBudget) {
         budgetEl.textContent = '₹0.00';
         spendableEl.textContent = 'Spendable: ₹0.00 (Savings Goal: ₹0.00) — set up your budget to get started';
+        renderBudgetProgress();
         return;
     }
 
@@ -151,6 +153,38 @@ function updateBudgetDisplay() {
 
     budgetEl.textContent = '₹' + total.toFixed(2);
     spendableEl.textContent = 'Spendable: ₹' + spendable.toFixed(2) + ' (Savings Goal: ₹' + savingsGoal.toFixed(2) + ')';
+
+    renderBudgetProgress();
+}
+
+// Visual progress bar: how much of this month's spendable budget has
+// been used so far. Reuses the same math as the Daily Spending Guide
+// card (calculateSafeDailySpend, in ml-predictions.js) so the two
+// features never disagree with each other.
+function renderBudgetProgress() {
+    const bar = document.getElementById('budget-progress-bar');
+    const label = document.getElementById('budget-progress-label');
+    if (!bar || !label) return;
+
+    if (!currentBudget || typeof calculateSafeDailySpend !== 'function') {
+        bar.style.width = '0%';
+        label.textContent = '';
+        return;
+    }
+
+    const result = calculateSafeDailySpend();
+    if (!result || result.spendableTotal <= 0) {
+        bar.style.width = '0%';
+        label.textContent = 'Add a spendable amount above to track progress';
+        return;
+    }
+
+    const pct = Math.min((result.spentThisMonth / result.spendableTotal) * 100, 100);
+    bar.style.width = pct.toFixed(0) + '%';
+    bar.style.backgroundColor = result.status === 'over' ? '#dc2626' : (result.status === 'fast' ? '#d97706' : '#059669');
+
+    label.textContent = '₹' + result.spentThisMonth.toFixed(0) + ' of ₹' + result.spendableTotal.toFixed(0) +
+        ' spent this month (' + pct.toFixed(0) + '%)';
 }
 
 console.log("✅ budget.js loaded successfully");
