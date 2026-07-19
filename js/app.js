@@ -215,32 +215,36 @@ function showExpenses() {
 
 // Modal functions
 function openBudgetForm() {
-    const modal = document.getElementById('budget-modal');
-    if (modal) modal.classList.remove('hidden');
-
     if (typeof populateCategoryCheckboxes === 'function') {
         populateCategoryCheckboxes();
     }
+    openModal('budget-modal');
 }
 
 function closeBudgetModal() {
-    const modal = document.getElementById('budget-modal');
-    if (modal) modal.classList.add('hidden');
+    closeModal('budget-modal');
 }
 
 function openExpenseForm() {
-    const modal = document.getElementById('expense-modal');
-    if (modal) modal.classList.remove('hidden');
-    
+    // Adding fresh, not editing - clear any in-progress edit state so
+    // the form is guaranteed blank and the submit button says "Add".
+    if (typeof resetExpenseForm === 'function') resetExpenseForm();
+
+    if (typeof populateCategorySelect === 'function') {
+        populateCategorySelect();
+    }
+
     const expenseDateInput = document.getElementById('expense-date');
     if (expenseDateInput) {
         expenseDateInput.value = new Date().toISOString().split('T')[0];
     }
+
+    openModal('expense-modal');
 }
 
 function closeExpenseModal() {
-    const modal = document.getElementById('expense-modal');
-    if (modal) modal.classList.add('hidden');
+    if (typeof resetExpenseForm === 'function') resetExpenseForm();
+    closeModal('expense-modal');
 }
 
 console.log("✅ app.js loaded successfully");
