@@ -54,12 +54,12 @@ function setupAuth() {
         const passVal = password.value;
 
         if (!emailVal || !passVal) {
-            alert("Enter email and password");
+            showToast("Enter email and password", "error");
             return;
         }
 
         if (passVal.length < 6) {
-            alert("Password must be 6+ characters");
+            showToast("Password must be 6+ characters", "error");
             return;
         }
 
@@ -67,7 +67,7 @@ function setupAuth() {
         // until 'supabase-ready' should already prevent this, but guard
         // against it anyway in case of a hard-reload edge case.
         if (!sb || typeof sb.auth === 'undefined') {
-            alert("Still connecting to the server — please wait a moment and try again");
+            showToast("Still connecting to the server — please wait a moment and try again", "error");
             return;
         }
 
@@ -94,7 +94,7 @@ function setupAuth() {
                 });
                 if (error) throw error;
                 console.log("✅ Registration success");
-                alert("Account created! (If your Supabase project still requires email confirmation, check your inbox first — otherwise you're logged in already.)");
+                showToast("Account created! You're logged in.", "success");
                 // Switch the form to Login mode so a second submit can't
                 // accidentally call signUp() again on the same email —
                 // that's what caused the rate-limit errors.
@@ -107,7 +107,7 @@ function setupAuth() {
 
         } catch (err) {
             console.error("❌ Error:", err);
-            alert("Error: " + (err.message || "Auth failed"));
+            showToast("Error: " + (err.message || "Auth failed"), "error");
         } finally {
             btn.disabled = false;
             btn.textContent = isLoginMode ? "Login" : "Register";
@@ -133,7 +133,7 @@ function setupAuth() {
                 await sb.auth.signOut();
                 console.log("✅ Logged out");
             } catch (err) {
-                alert("Logout error: " + err.message);
+                showToast("Logout error: " + err.message, "error");
             }
         });
     }
