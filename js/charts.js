@@ -9,6 +9,7 @@
 let budgetChartInstance = null;
 let expenseChartInstance = null;
 let trendChartInstance = null;
+let comparisonChartInstance = null;
 
 const CHART_COLORS = [
     '#059669', '#0891b2', '#7c3aed', '#db2777', '#d97706',
@@ -33,6 +34,7 @@ function colorForCategory(cat) {
 function renderCharts() {
     renderBudgetChart();
     renderExpenseChart();
+    renderComparisonChart();
     renderTrendChart();
 }
 
@@ -92,6 +94,59 @@ function renderExpenseChart() {
             responsive: true,
             maintainAspectRatio: false,
             plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11 } } } }
+        }
+    });
+}
+
+function renderComparisonChart() {
+    const canvas = document.getElementById('comparisonChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+
+    if (comparisonChartInstance) comparisonChartInstance.destroy();
+
+    const allocations = (currentBudget && currentBudget.category_allocations) || {};
+
+    const now = new Date();
+    const actualByCategory = {};
+    (currentExpenses || []).forEach(function (expense) {
+        const d = new Date(expense.expense_date);
+        if (d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear()) {
+            actualByCategory[expense.category] = (actualByCategory[expense.category] || 0) + Number(expense.amount);
+        }
+    });
+
+    // Union of every category that has either a planned allocation or
+    // actual spending this month, so a category isn't dropped just
+    // because only one side of the comparison has data for it yet.
+    const categorySet = {};
+    Object.keys(allocations).forEach(function (c) { if (allocations[c] > 0) categorySet[c] = true; });
+    Object.keys(actualByCategory).forEach(function (c) { categorySet[c] = true; });
+    const labels = Object.keys(categorySet);
+
+    if (labels.length === 0) return; // nothing to compare yet
+
+    const plannedData = labels.map(function (c) { return allocations[c] || 0; });
+    const actualData = labels.map(function (c) { return actualByCategory[c] || 0; });
+
+    comparisonChartInstance = new Chart(canvas, {
+        type: 'bar',
+        data: {
+            labels: labels,
+            datasets: [
+                { label: 'Planned', data: plannedData, backgroundColor: '#a7f3d0', borderRadius: 4 },
+                { label: 'Actual', data: actualData, backgroundColor: '#059669', borderRadius: 4 }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: { display: true, position: 'bottom', labels: { boxWidth: 12, font: { size: 10 } } }
+            },
+            scales: {
+                y: { beginAtZero: true },
+                x: { ticks: { font: { size: 9 } } }
+            }
         }
     });
 }
